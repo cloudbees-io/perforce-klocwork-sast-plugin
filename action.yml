@@ -1,0 +1,138 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: action
+name: perforce-klocwork-sast-plugin
+inputs:
+  enable-agent-scan:
+    description: 'Enable Klocwork Agent Scan'
+    required: false
+  url:
+    description: 'Klocwork host URL'
+    required: true
+  license-host:
+    description: 'Klocwork license server hostname'
+    required: false
+  license-port:
+    description: 'Klocwork license server port'
+    required: false
+  username:
+    description: 'Klocwork username'
+    required: true
+  token:
+    description: 'Klocwork application token'
+    required: false
+  password:
+    description: 'Klocwork password'
+    required: false
+  project-name:
+    description: 'Klocwork project name'
+    required: false
+  build-name:
+    description: 'Klocwork build name'
+    required: false
+  build-directory:
+    description: 'Klocwork build directory'
+    required: false
+  build-tool:
+    description: 'Klocwork build tool'
+    required: true
+  build-spec-file:
+    description: 'Klocwork build specification file path'
+    required: false
+  tables-directory:
+    description: 'Klocwork scan tables directory'
+    required: false
+  build-options:
+    description: 'Klocwork scan build options'
+    required: false
+  scan-timeout:
+    description: 'Klocwork scan waiting time in seconds'
+    required: false
+  ref:
+    description: 'Flag to indicate the ref that should be archived (same as supplied to checkout)'
+    required: false
+    default: ''
+  workspace-dir:
+    description: 'Flag to mention the path where the checked out code will be present'
+    required: false
+    default: ''
+outputs:
+  critical-count:
+    description: A string containing the number of Critical security findings discovered during the scan.
+    value: ${{steps.process-outputs.outputs.critical-count}}
+  very-high-count:
+    description: A string containing the number of Very High security findings discovered during the scan.
+    value: ${{steps.process-outputs.outputs.very-high-count}}
+  high-count:
+    description: A string containing the number of High security findings discovered during the scan.
+    value: ${{steps.process-outputs.outputs.high-count}}
+  medium-count:
+    description: A string containing the number of Medium security findings discovered during the scan.
+    value: ${{steps.process-outputs.outputs.medium-count}}
+  low-count:
+    description: A string containing the number of Low security findings discovered during the scan.
+    value: ${{steps.process-outputs.outputs.low-count}}
+description:
+runs:
+  using: composite
+  steps:
+    - name: Generate sha and ref
+      uses: docker://public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:1f95fd45dd03fa6f363ff95cb20142fe4b7d83c4
+      with:
+        entrypoint: assets-plugin-chain-utils
+        args: get-commit-info
+      env:
+        INPUT_CLOUDBEES_API_TOKEN: ${{ cloudbees.api.token }}
+        INPUT_CLOUDBEES_API_URL: ${{ cloudbees.api.url }}
+        INPUT_RUN_ID: ${{ cloudbees.run_id }}
+        INPUT_CLOUDBEES_EVENT_PATH: /cloudbees/event.json
+        INPUT_REF: ${{ inputs.ref }}
+        INPUT_WORKSPACE_DIR: ${{ inputs.workspace-dir }}
+
+    - name: Generate reference files
+      uses: docker://public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:1f95fd45dd03fa6f363ff95cb20142fe4b7d83c4
+      with:
+        entrypoint: assets-plugin-chain-utils
+        args: generate-references --asset-type "CODE"
+      env:
+        INPUT_CLOUDBEES_API_TOKEN: ${{ cloudbees.api.token }}
+        INPUT_CLOUDBEES_API_URL: ${{ cloudbees.api.url }}
+        INPUT_RUN_ID: ${{ cloudbees.run_id }}
+
+    - name: Run SCC Scan for tag generation
+      uses: docker://public.ecr.aws/l7o7z1g8/actions/assets-scc-scanner:9393ab805bb706c829c471e1dfc8e6ee73541253
+      continue-on-error: true
+      env:
+        RUN_ID: ${{ cloudbees.run_id }}
+        JOB_ID: ${{ job.id }}
+        STEP_ID: ${{ step.internal.id }}
+      run: /app/plugin-scc-scanner -mode single
+
+
+    - name: Run perforce klocwork sast plugin
+      uses: docker://public.ecr.aws/cloudbees/actions/assets-klocwork-scanner:fdb53c7fd3c1e8c795c2796e7414edbada9b6113
+      env:
+        KLOCWORK_PROPS: '{"url": "${{ inputs.url }}" , "username": "${{ inputs.username }}", "password": "${{ inputs.password }}", "token": "${{ inputs.token }}", "enableAgentScan": "${{ inputs.enable-agent-scan }}", "licenseHost": "${{ inputs.license-host }}", "licensePort": "${{ inputs.license-port }}"}'
+        RUN_ID: ${{ cloudbees.run_id }}
+        JOB_ID: ${{ job.id }}
+        STEP_ID: ${{ step.internal.id }}
+        KLOCWORK_PROJECT: ${{ inputs.project-name }}
+        KLOCWORK_BUILD_NAME: ${{ inputs.build-name}}
+        KLOCWORK_BUILD_DIR: ${{ inputs.build-directory}}
+        KLOCWORK_BUILD_TOOL: ${{ inputs.build-tool}}
+        KLOCWORK_BUILD_SPEC_FILE: ${{ inputs.build-spec-file}}
+        KLOCWORK_TABLES_DIR: ${{ inputs.tables-directory}}
+        KLOCWORK_BUILD_OPS: ${{ inputs.build-options}}
+        KLOCWORK_SCAN_TIMEOUT: ${{ inputs.scan-timeout}}
+
+      run: /app/plugin-klocwork-scanner -mode single
+
+    - name: Complete execution plan
+      uses: docker://public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:1f95fd45dd03fa6f363ff95cb20142fe4b7d83c4
+      id: process-outputs
+      with:
+        entrypoint: assets-plugin-chain-utils
+        args: process-outputs
+      env:
+        INPUT_CLOUDBEES_API_TOKEN: ${{ cloudbees.api.token }}
+        INPUT_CLOUDBEES_API_URL: ${{ cloudbees.api.url }}
+        INPUT_RUN_ID: ${{ cloudbees.run_id }}
