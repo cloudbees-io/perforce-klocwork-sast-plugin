@@ -71,7 +71,6 @@ outputs:
   low-count:
     description: A string containing the number of Low security findings discovered during the scan.
     value: ${{steps.process-outputs.outputs.low-count}}
-description:
 runs:
   using: composite
   steps:
