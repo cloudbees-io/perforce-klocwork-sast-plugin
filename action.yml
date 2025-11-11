@@ -29,6 +29,9 @@ inputs:
   build-name:
     description: 'Klocwork build name'
     required: false
+  scan-mode:
+    description: 'Klocwork scan mode pull or orchestrate'
+    required: false
   build-directory:
     description: 'Klocwork build directory'
     required: false
@@ -126,6 +129,7 @@ runs:
         STEP_ID: ${{ step.internal.id }}
         KLOCWORK_PROJECT: ${{ inputs.project-name }}
         KLOCWORK_BUILD_NAME: ${{ inputs.build-name}}
+        SCAN_MODE: ${{ inputs.scan-mode}}
         KLOCWORK_BUILD_DIR: ${{ inputs.build-directory}}
         KLOCWORK_BUILD_TOOL: ${{ inputs.build-tool}}
         KLOCWORK_BUILD_SPEC_FILE: ${{ inputs.build-spec-file}}
