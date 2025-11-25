@@ -1,4 +1,4 @@
-= Cloudbees action: Scan with Perforce Klocwork SAST
+= CloudBees action: Scan with Perforce Klocwork SAST
 
 Use this action to scan repositories for security vulnerabilities, quality defects, and compliance issues with the Perforce Klocwork Static Application Security Testing (SAST) scanner.
 You can also use the action output as a quality gate for the next step or job in your workflow.
