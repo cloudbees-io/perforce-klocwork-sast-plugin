@@ -84,8 +84,20 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Clear asset store for scan
+      uses: docker://alpine:latest
+      shell: sh
+      run: |
+        if [ -d "$CLOUDBEES_WORKSPACE/store" ]; then
+          find $CLOUDBEES_WORKSPACE/store -mindepth 2 -maxdepth 2 \
+            -type d ! -name "discovered-profile-findings" \
+            -exec rm -rf {} +
+          rm -rf $CLOUDBEES_WORKSPACE/store/binary-assets
+          rm -rf $CLOUDBEES_WORKSPACE/store/request
+        fi
+
     - name: Generate sha and ref
-      uses: docker://public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:d621d66df83be71f6b4b1d1ac7ac9e0de6f6fc7d
+      uses: docker://public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:c39cad6501808dd7bad1cf442ed8334edae4be29
       with:
         entrypoint: assets-plugin-chain-utils
         args: get-commit-info
@@ -98,7 +110,7 @@ runs:
         INPUT_WORKSPACE_DIR: ${{ inputs.workspace-dir }}
 
     - name: Generate reference files
-      uses: docker://public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:d621d66df83be71f6b4b1d1ac7ac9e0de6f6fc7d
+      uses: docker://public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:c39cad6501808dd7bad1cf442ed8334edae4be29
       with:
         entrypoint: assets-plugin-chain-utils
         args: generate-references --asset-type "CODE"
@@ -118,7 +130,7 @@ runs:
 
 
     - name: Run perforce klocwork sast plugin
-      uses: docker://public.ecr.aws/cloudbees/actions/assets-klocwork-scanner:0e60a718ea67564bc373daf96a86778e9f053489
+      uses: docker://public.ecr.aws/cloudbees/actions/assets-klocwork-scanner:3773435041acff15ea0d55d0700e8018e9cb09c9
       env:
         KLOCWORK_PROPS: '{"url": "${{ inputs.url }}" , "username": "${{ inputs.username }}", "password": "${{ inputs.password }}", "token": "${{ inputs.token }}", "enableAgentScan": "${{ inputs.enable-agent-scan }}", "licenseHost": "${{ inputs.license-host }}", "licensePort": "${{ inputs.license-port }}"}'
         RUN_ID: ${{ cloudbees.run_id }}
@@ -139,7 +151,7 @@ runs:
       run: /app/plugin-klocwork-scanner -mode single
 
     - name: Complete execution plan
-      uses: docker://public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:d621d66df83be71f6b4b1d1ac7ac9e0de6f6fc7d
+      uses: docker://public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:c39cad6501808dd7bad1cf442ed8334edae4be29
       id: process-outputs
       with:
         entrypoint: assets-plugin-chain-utils
@@ -148,3 +160,4 @@ runs:
         INPUT_CLOUDBEES_API_TOKEN: ${{ cloudbees.api.token }}
         INPUT_CLOUDBEES_API_URL: ${{ cloudbees.api.url }}
         INPUT_RUN_ID: ${{ cloudbees.run_id }}
+        INPUT_WORKSPACE_DIR: ${{ inputs.workspace-dir }}
