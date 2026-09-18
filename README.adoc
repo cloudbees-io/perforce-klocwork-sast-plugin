@@ -154,6 +154,10 @@ NOTE: For C/C++/.NET projects, since `kwinject` is used for building the specifi
 | String
 | The number of *Critical* severity issues discovered during the scan.
 
+| `very-high-count`
+| String
+| The number of *Very High* severity issues discovered during the scan.
+
 | `high-count`
 | String
 | The number of *High* severity issues discovered during the scan.
@@ -166,9 +170,9 @@ NOTE: For C/C++/.NET projects, since `kwinject` is used for building the specifi
 | String
 | The number of *Low* severity issues discovered during the scan.
 
-| `total-issues`
-| String
-| The total number of issues discovered during the scan.
+| `policy-subject`
+| JSON
+| A JSON value containing details about the vulnerability scan summary and details.
 
 |===
 
@@ -356,6 +360,7 @@ jobs:
             echo "High count: ${{steps.klocwork-step.outputs.high-count}}"
             echo "Medium count: ${{steps.klocwork-step.outputs.medium-count}}"
             echo "Low count: ${{steps.klocwork-step.outputs.low-count}}"
+            echo "Policy subject: ${{steps.klocwork-step.outputs.policy-subject}}"
 
 
 ----
@@ -387,6 +392,7 @@ jobs:
       klocwork-job-output-high: ${{ steps.klocwork-step.outputs.high-count }}
       klocwork-job-output-medium: ${{ steps.klocwork-step.outputs.medium-count }}
       klocwork-job-output-low: ${{ steps.klocwork-step.outputs.low-count }}
+      klocwork-job-output-policy-subject: ${{ steps.klocwork-step.outputs.policy-subject }}
     steps:
       - name: check out source code
         uses: cloudbees-io/checkout@v1
@@ -422,6 +428,7 @@ jobs:
           echo "High count: ${{ needs.job1.outputs.klocwork-job-output-high }}"
           echo "Medium count: ${{ needs.job1.outputs.klocwork-job-output-medium }}"
           echo "Low count: ${{ needs.job1.outputs.klocwork-job-output-low }}"
+          echo "Policy subject: ${{ needs.job1.outputs.klocwork-job-output-policy-subject }}"
 
 ----
 
