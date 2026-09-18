@@ -154,6 +154,10 @@ NOTE: For C/C++/.NET projects, since `kwinject` is used for building the specifi
 | String
 | The number of *Critical* severity issues discovered during the scan.
 
+| `very-high-count`
+| String
+| The number of *Very High* severity issues discovered during the scan.
+
 | `high-count`
 | String
 | The number of *High* severity issues discovered during the scan.
@@ -165,10 +169,6 @@ NOTE: For C/C++/.NET projects, since `kwinject` is used for building the specifi
 | `low-count`
 | String
 | The number of *Low* severity issues discovered during the scan.
-
-| `total-issues`
-| String
-| The total number of issues discovered during the scan.
 
 | `policy-subject`
 | JSON
